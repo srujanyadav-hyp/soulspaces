@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "244222275646",
+    "project_id": "vibranium-hq",
+    "storage_bucket": "vibranium-hq.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:244222275646:android:f66e711893d676d800e16f",
+        "android_client_info": {
+          "package_name": "com.example.soulspace"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAgtEGkCNM2VfTNkoeRY3Ik0ceTRYV2VQ8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
