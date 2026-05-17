@@ -1,90 +1,46 @@
-import 'package:flutter/material.dart';
-import '../../domain/usecases/get_confession_response_usecase.dart';
-import '../../data/services/stt_service.dart';
-import '../../data/services/tts_service.dart';
+import 'dart:async';
 
-enum AppState { idle, listening, processing, speaking }
+import 'package:flutter/foundation.dart';
 
+import '../../domain/entities/divine_state.dart';
+import '../../domain/entities/live_phase.dart';
+import '../../domain/repositories/divine_voice_repository.dart';
+
+/// Exposes the live conversation state to the UI as a [ChangeNotifier],
+/// mirroring snapshots emitted by the [DivineVoiceRepository].
 class HomeProvider extends ChangeNotifier {
-  final GetConfessionResponseUseCase useCase;
-  final SttService sttService;
-  final TtsService ttsService;
-
-  AppState _state = AppState.idle;
-  AppState get state => _state;
-
-  String _transcribedText = "";
-  String get transcribedText => _transcribedText;
-
-  String _godsResponse = "";
-  String get godsResponse => _godsResponse;
-
-  HomeProvider({
-    required this.useCase,
-    required this.sttService,
-    required this.ttsService,
-  }) {
-    _initServices();
-  }
-
-  Future<void> _initServices() async {
-    await sttService.initialize();
-    await ttsService.initialize();
-  }
-
-  void toggleListening() {
-    if (_state == AppState.idle || _state == AppState.speaking) {
-      _startListening();
-    } else if (_state == AppState.listening) {
-      _stopListeningAndProcess();
-    }
-  }
-
-  void _startListening() {
-    ttsService.stop();
-    _transcribedText = "";
-    _godsResponse = "";
-    _state = AppState.listening;
-    notifyListeners();
-
-    sttService.startListening((text) {
-      _transcribedText = text;
+  HomeProvider({required DivineVoiceRepository repository})
+      : _repository = repository {
+    _subscription = _repository.stateStream.listen((state) {
+      _state = state;
       notifyListeners();
-    }, onDone: () {
-      // User must manually tap the mic button to stop and process.
-      // Auto-stop is disabled so the user doesn't get cut off.
     });
   }
 
-  Future<void> _stopListeningAndProcess() async {
-    sttService.stopListening();
-    if (_transcribedText.trim().isEmpty) {
-      _state = AppState.idle;
-      notifyListeners();
-      return;
-    }
+  final DivineVoiceRepository _repository;
+  late final StreamSubscription<DivineState> _subscription;
 
-    _state = AppState.processing;
-    notifyListeners();
+  DivineState _state = const DivineState();
+  DivineState get state => _state;
 
-    try {
-      final response = await useCase.execute(_transcribedText);
-      _godsResponse = response.text;
-      _state = AppState.speaking;
-      notifyListeners();
+  LivePhase get phase => _state.phase;
 
-      await ttsService.speak(_godsResponse, onComplete: () {
-        _state = AppState.idle;
-        notifyListeners();
-      });
-    } catch (e) {
-      _godsResponse = "క్షమించండి, కనెక్ట్ చేయడంలో లోపం ఏర్పడింది. దయచేసి మళ్లీ ప్రయత్నించండి.";
-      _state = AppState.speaking;
-      notifyListeners();
-      await ttsService.speak(_godsResponse, onComplete: () {
-        _state = AppState.idle;
-        notifyListeners();
-      });
-    }
+  /// True while connecting or in a live session — the primary button then
+  /// reads "end" rather than "start".
+  bool get isBusy =>
+      _state.phase == LivePhase.connecting || _state.isSessionActive;
+
+  Future<void> startConversation() => _repository.startConversation();
+  Future<void> endConversation() => _repository.endConversation();
+
+  /// Toggles the session — the single primary control.
+  Future<void> toggleSession() =>
+      isBusy ? endConversation() : startConversation();
+
+  @override
+  void dispose() {
+    _subscription.cancel();
+    _repository.dispose();
+    super.dispose();
   }
 }

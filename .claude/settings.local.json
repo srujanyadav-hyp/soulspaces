@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:blog.google)",
+      "WebFetch(domain:ai.google.dev)",
+      "WebFetch(domain:pub.dev)",
+      "WebFetch(domain:firebase.google.com)",
+      "Bash(flutter --version)",
+      "Bash(dart --version)",
+      "Bash(flutter pub *)",
+      "Bash(flutter analyze *)",
+      "Bash(git rm *)",
+      "Bash(adb wait-for-device *)",
+      "Bash(adb shell *)",
+      "Bash(flutter run *)",
+      "PowerShell(Get-ChildItem *)",
+      "Bash(adb -s emulator-5554 shell pm grant com.example.soulspace android.permission.RECORD_AUDIO)",
+      "Bash(adb -s emulator-5554 shell input tap 620 2550)"
+    ]
+  }
+}
